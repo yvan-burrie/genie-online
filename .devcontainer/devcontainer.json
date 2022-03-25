@@ -1,0 +1,9 @@
+{
+    "name": "Genie Online",
+    "dockerComposeFile": "../docker/docker-compose.yml",
+    "service": "dev",
+    "workspaceFolder": "/var/www/html",
+    "shutdownAction": "none",
+    "extensions": [
+    ]
+}
