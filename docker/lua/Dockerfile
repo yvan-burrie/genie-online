@@ -1,0 +1,2 @@
+ARG LUA_VERSION=5
+FROM nickblah/lua:${LUA_VERSION}

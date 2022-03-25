@@ -1,0 +1,167 @@
+version: '3.5'
+
+networks:
+    genie:
+        name: genie
+        driver: bridge
+
+services:
+    nginx:
+        build:
+            context: .
+            dockerfile: nginx/Dockerfile
+        restart: unless-stopped
+        tty: true
+        container_name: nginx
+        depends_on:
+            - php
+            - mysql
+        ports:
+            - "8080:80"
+            - "443:443"
+        volumes:
+            - ..:/var/www/html:delegated
+        networks:
+            - genie
+
+    apache:
+        build:
+            context: .
+            dockerfile: apache/Dockerfile
+        container_name: apache
+        depends_on:
+            - php
+            - mysql
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ..:/var/www/html:delegated
+        networks:
+            - genie
+
+    php: &php
+        build: &php_build
+            context: .
+            dockerfile: php/Dockerfile
+            target: php
+            args:
+                PHP_VERSION: ${PHP_VERSION:-7.4.28}
+        container_name: php
+        ports:
+            - "9000:9000"
+        volumes:
+            - ..:/var/www/html:delegated
+        networks:
+            - genie
+
+    phpunit:
+        <<: *php
+        container_name: phpunit
+        ports:
+            - "9001:9001"
+        entrypoint: ["/var/www/html/vendor/bin/phpunit"]
+
+    dev:
+        <<: *php
+        build:
+            <<: *php_build
+            target: php_dev
+        container_name: dev
+        ports:
+            - "9002:9002"
+
+    mysql:
+        build:
+            context: .
+            dockerfile: mysql/Dockerfile
+            args:
+                MYSQL_VERSION: ${MYSQL_VERSION:-5.7.37}
+        container_name: mysql
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_USER: ${DB_USERNAME}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+            SERVICE_TAGS: dev
+            SERVICE_NAME: mysql
+        volumes:
+            - ..:/var/www/html:delegated
+        networks:
+            - genie
+
+    pma:
+        image: phpmyadmin:latest
+        container_name: pma
+        depends_on:
+            - mysql
+        restart: always
+        tty: true
+        environment:
+            PMA_HOST: mysql
+        ports:
+            - "8081:80"
+        networks:
+            - genie
+
+    redis:
+        image: redis:latest
+        container_name: redis
+        ports:
+            - "6379:6379"
+        networks:
+            - genie
+
+    git:
+        image: alpine/git:latest
+        container_name: git
+        working_dir: /var/www/html
+        tty: true
+        entrypoint: ["git"]
+        volumes:
+            - ..:/var/www/html:delegated
+        networks:
+            - genie
+
+    node: &node
+        build:
+            context: .
+            dockerfile: node/Dockerfile
+            target: node
+            args:
+                NODE_VERSION: ${NODE_VERSION:-16.14}
+        container_name: node
+        working_dir: /var/www/html
+        tty: true
+        volumes:
+            - ..:/var/www/html:delegated
+        networks:
+            - genie
+
+    npm:
+        <<: *node
+        container_name: npm
+        entrypoint: ["npm"]
+
+    yarn:
+        <<: *node
+        container_name: yarn
+        entrypoint: ["yarn"]
+
+    lua:
+        build:
+            context: .
+            dockerfile: lua/Dockerfile
+            args:
+                LUA_VERSION: ${LUA_VERSION:-5.1}
+        container_name: lua
+        working_dir: /var/www/html
+        tty: true
+        volumes:
+            - ..:/var/www/html:delegated
+        networks:
+            - genie
