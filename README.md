@@ -22,3 +22,7 @@ Open project in VS Code and then reopen in remote container when the `dev` servi
 ## PhpStorm Local Development
 
 Open project in PhpStorm.
+
+## PhpMyAdmin Local Development
+
+Open [PhpMyAdmin](http://localhost:8081/).

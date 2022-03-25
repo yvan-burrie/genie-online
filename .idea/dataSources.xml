@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+    <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+        <data-source source="LOCAL" name="genie@localhost" uuid="8a328ae8-0649-42ed-814e-59910f89822a">
+            <driver-ref>mysql.8</driver-ref>
+            <synchronize>true</synchronize>
+            <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+            <jdbc-url>jdbc:mysql://localhost:3306/genie</jdbc-url>
+            <working-dir>$ProjectFileDir$</working-dir>
+        </data-source>
+    </component>
+</project>
