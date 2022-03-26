@@ -5,7 +5,7 @@
 Build all necessary services:
 
 ```shell
-docker-compose build nginx phpunit dev mysql node npm yarn lua
+docker-compose build nginx apache phpunit dev mysql node npm yarn lua
 ```
 
 ## Running Essential services
@@ -22,7 +22,9 @@ Or, run the Apache service:
 docker-compose up -d apache
 ```
 
-Also, run other services
+Running the `nginx` or `apache` services will also start the `php` and `mysql` services.
+
+Also, run other services:
 ```shell
 docker-compose up -d redis pma
 ```
