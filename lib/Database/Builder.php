@@ -3,7 +3,9 @@
 namespace Lib\Database;
 
 use Countable;
+use InvalidArgumentException;
 use PDO, PDOStatement;
+use UnexpectedValueException;
 
 class Builder implements Countable
 {
@@ -14,13 +16,13 @@ class Builder implements Countable
     /**
      * @param PDO|null $pdo
      */
-    protected function __construct(PDO $pdo = null)
+    public function __construct(PDO $pdo = null)
     {
         if ($pdo === null) {
             $pdo = new PDO(
-                'mysql:host=' . env('DB_HOST') . ';dbname=' . env('DB_NAME'),
-                env('DB_USER'),
-                env('DB_PASS'),
+                'mysql:host=' . $_ENV['DB_HOST'] . ';dbname=' . $_ENV['DB_DATABASE'],
+                $_ENV['DB_USERNAME'],
+                $_ENV['DB_PASSWORD'],
                 [
                     PDO::ATTR_PERSISTENT => true,
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -32,25 +34,29 @@ class Builder implements Countable
     /**
      * @param string|string[]|array<string, string|string[]> $table
      */
-    public function __invoke(mixed $queries): self
+    public function __invoke($queries): self
     {
         switch (true) {
             case is_string($queries): {
-                $this->statement = $this->pdo->prepare($queries);
+                $statement = $this->pdo->prepare($queries);
                 break;
             }
             case is_array($queries): {
-                foreach ($queries as $a => &$b) {
-                    if (is_string($a)) {
-                        $b = strtoupper($a) . ' ' . $b;
-                        continue;
-                    }
-                    $b = is_array($b) ? implode(' ', $b) : $b;
-                }
-                $this->statement = $this->pdo->prepare($queries);
+                array_walk($queries, function (&$value, $key): void {
+                    $value = is_string($key) ? $key . ' ' . $value : $value;
+                });
+                $queries = implode(' ', array_values($queries));
+                $statement = $this->pdo->prepare($queries);
                 break;
             }
+            default:
+                throw new InvalidArgumentException;
         }
+
+        if ($statement === false) {
+            throw new UnexpectedValueException;
+        }
+        $this->statement = $statement;
 
         return $this;
     }
@@ -79,16 +85,21 @@ class Builder implements Countable
         $this->statement->bindValue($parameter, $value, $type);
     }
 
-    public function fetchAll()
+    public function execute(): bool
     {
-        $this->statement->execute();
+        return $this->statement->execute();
+    }
+
+    public function fetchAll(): array
+    {
+        $this->execute();
 
         return $this->statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function fetch()
+    public function fetch(): array
     {
-        $this->statement->execute();
+        $this->execute();
 
         return $this->statement->fetch(PDO::FETCH_ASSOC);
     }

@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+use Lib\Console\MigrateCommand;
+use Symfony\Component\Console\Application as ConsoleApp;
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
+
+$consoleApp = new ConsoleApp;
+$consoleApp->add(new MigrateCommand);
+$consoleApp->run();
