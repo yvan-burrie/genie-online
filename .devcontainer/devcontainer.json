@@ -5,5 +5,6 @@
     "workspaceFolder": "/var/www/html",
     "shutdownAction": "none",
     "extensions": [
+        "recca0120.vscode-phpunit"
     ]
 }

@@ -34,13 +34,22 @@ RUN apk --no-cache add pcre-dev ${PHPIZE_DEPS} && \
 
 RUN chown -R ${PHPUSER}:${PHPGROUP} .
 
-FROM php AS php_dev
+FROM php AS php_composer
 
 COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-RUN apk add --no-cache bash curl vim
+FROM php_composer AS php_developer
 
-RUN apk add --no-cache -f git composer nodejs npm yarn
+RUN apk add --no-cache -f \
+    bash \
+    curl \
+    git \
+    nano \
+    nodejs \
+    npm \
+    yarn
 
-RUN npm install -g npm@latest --force
-RUN npm install -g yarn@latest --force
+RUN npm install -g --force \
+    npm@latest \
+    svgo@latest \
+    yarn@latest

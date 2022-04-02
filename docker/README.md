@@ -2,13 +2,19 @@
 
 ## Building Services
 
-Build all necessary services:
+Build all services:
 
 ```shell
-docker-compose build nginx apache phpunit dev mysql node npm yarn lua
+docker-compose build
 ```
 
-## Running Essential services
+Or, specifically build the necessary services:
+
+```shell
+docker-compose build nginx apache phpunit dev pma node npm yarn lua
+```
+
+## Running services
 
 Run the Nginx service:
 
@@ -16,18 +22,20 @@ Run the Nginx service:
 docker-compose up -d nginx
 ```
 
-Or, run the Apache service:
+Or, run the Apache service instead:
 
 ```shell
 docker-compose up -d apache
 ```
 
-Running the `nginx` or `apache` services will also start the `php` and `mysql` services.
+Note that running the `nginx` or `apache` services will also run the `php`, `mysql`, and `redis` services.
 
-Also, run other services:
+Optionally, run the PhpMyAdmin service:
 ```shell
-docker-compose up -d redis pma
+docker-compose up -d pma
 ```
+
+Then, open [PhpMyAdmin](http://localhost:8081/) in a browser.
 
 ## Running Command Services
 
@@ -41,3 +49,13 @@ docker-compose run --rm npm
 docker-compose run --rm yarn
 docker-compose run --rm lua
 ```
+
+## Service Ports
+
+- `nginx` or `apache`: `80`
+- `pma`: `81`
+- `mysql`: `3306`
+- `php`: `9000`
+- `phpunit`: `9001`
+- `dev`: `9002`
+- `redis`: `6379`

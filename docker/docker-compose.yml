@@ -1,37 +1,15 @@
 version: '3.5'
 
-networks:
-    genie:
-        name: genie
-        driver: bridge
-
 services:
     nginx:
         build:
             context: .
             dockerfile: nginx/Dockerfile
-        restart: unless-stopped
-        tty: true
-        container_name: nginx
         depends_on:
             - php
-            - mysql
-        ports:
-            - "8080:80"
-            - "443:443"
-        volumes:
-            - ..:/var/www/html:delegated
-        networks:
-            - genie
-
-    apache:
-        build:
-            context: .
-            dockerfile: apache/Dockerfile
-        container_name: apache
-        depends_on:
-            - php
-            - mysql
+            - pma
+            - redis
+        container_name: ${COMPOSE_PROJECT_NAME}_nginx
         restart: unless-stopped
         tty: true
         ports:
@@ -39,39 +17,67 @@ services:
             - "443:443"
         volumes:
             - ..:/var/www/html:delegated
-        networks:
-            - genie
 
-    php: &php
+    apache:
+        build:
+            context: .
+            dockerfile: apache/Dockerfile
+        container_name: ${COMPOSE_PROJECT_NAME}_apache
+        depends_on:
+            - php
+            - pma
+            - redis
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ..:/var/www/html:delegated
+
+    php:
         build: &php_build
             context: .
             dockerfile: php/Dockerfile
             target: php
             args:
                 PHP_VERSION: ${PHP_VERSION:-7.4.28}
-        container_name: php
+        container_name: ${COMPOSE_PROJECT_NAME}_php
         ports:
             - "9000:9000"
         volumes:
             - ..:/var/www/html:delegated
-        networks:
-            - genie
+
+    composer:
+        build:
+            <<: *php_build
+            target: php_composer
+        container_name: ${COMPOSE_PROJECT_NAME}_composer
+        volumes:
+            - ..:/var/www/html:delegated
+        working_dir: /var/www/html
+        environment:
+            COMPOSER_MEMORY_LIMIT: -1
+        entrypoint: ["composer"]
 
     phpunit:
-        <<: *php
-        container_name: phpunit
-        ports:
-            - "9001:9001"
+        build:
+            <<: *php_build
+            target: php_composer
+        container_name: ${COMPOSE_PROJECT_NAME}_phpunit
+        volumes:
+            - ..:/var/www/html:delegated
+        working_dir: /var/www/html
         entrypoint: ["/var/www/html/vendor/bin/phpunit"]
 
     dev:
-        <<: *php
         build:
             <<: *php_build
-            target: php_dev
-        container_name: dev
-        ports:
-            - "9002:9002"
+            target: php_developer
+        container_name: ${COMPOSE_PROJECT_NAME}_dev
+        volumes:
+            - ..:/var/www/html:delegated
+        working_dir: /var/www/html
 
     mysql:
         build:
@@ -79,9 +85,13 @@ services:
             dockerfile: mysql/Dockerfile
             args:
                 MYSQL_VERSION: ${MYSQL_VERSION:-5.7.37}
-        container_name: mysql
+        container_name: ${COMPOSE_PROJECT_NAME}_mysql
+        restart: unless-stopped
+        tty: true
         ports:
             - "3306:3306"
+        volumes:
+            - ./mysql/lib:/var/lib/mysql:delegated
         environment:
             MYSQL_DATABASE: ${DB_DATABASE}
             MYSQL_USER: ${DB_USERNAME}
@@ -89,45 +99,36 @@ services:
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
             SERVICE_TAGS: dev
             SERVICE_NAME: mysql
-        volumes:
-            - ./mysql/lib:/var/lib/mysql:delegated
-        networks:
-            - genie
 
     pma:
         image: phpmyadmin:latest
-        container_name: pma
+        container_name: ${COMPOSE_PROJECT_NAME}_pma
         depends_on:
             - mysql
         restart: always
-        tty: true
-        environment:
-            PMA_HOST: mysql
         ports:
             - "8081:80"
-        networks:
-            - genie
+        environment:
+            PMA_HOST: mysql
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
 
     redis:
         image: redis:latest
-        container_name: redis
+        container_name: ${COMPOSE_PROJECT_NAME}_redis
         ports:
             - "6379:6379"
         volumes:
             - ./redis/lib:/var/lib/redis:delegated
-        networks:
-            - genie
 
     git:
         image: alpine/git:latest
-        container_name: git
+        container_name: ${COMPOSE_PROJECT_NAME}_git
         working_dir: /var/www/html
         tty: true
         entrypoint: ["git"]
         volumes:
             - ..:/var/www/html:delegated
-        networks:
-            - genie
+            - ./git/.gitconfig:/etc/.gitconfig
 
     node: &node
         build:
@@ -136,22 +137,19 @@ services:
             target: node
             args:
                 NODE_VERSION: ${NODE_VERSION:-16.14}
-        container_name: node
-        working_dir: /var/www/html
-        tty: true
+        container_name: ${COMPOSE_PROJECT_NAME}_node
         volumes:
             - ..:/var/www/html:delegated
-        networks:
-            - genie
+        working_dir: /var/www/html
 
     npm:
         <<: *node
-        container_name: npm
+        container_name: ${COMPOSE_PROJECT_NAME}_npm
         entrypoint: ["npm"]
 
     yarn:
         <<: *node
-        container_name: yarn
+        container_name: ${COMPOSE_PROJECT_NAME}_yarn
         entrypoint: ["yarn"]
 
     lua:
@@ -160,10 +158,8 @@ services:
             dockerfile: lua/Dockerfile
             args:
                 LUA_VERSION: ${LUA_VERSION:-5.1}
-        container_name: lua
+        container_name: ${COMPOSE_PROJECT_NAME}_lua
         working_dir: /var/www/html
         tty: true
         volumes:
             - ..:/var/www/html:delegated
-        networks:
-            - genie

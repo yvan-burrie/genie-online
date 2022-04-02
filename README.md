@@ -2,17 +2,29 @@
 
 ## Development Service
 
+Copy the environment file:
+
+```shell
+sudo cp .env.dev.env .env
+```
+
+Edit the environment file:
+
+```shell
+sudo nano .env
+```
+
 Build and run the `dev` service:
 
 ```shell
-docker-compose build dev
-docker-compose up -d dev
+sudo docker-compose build dev
+sudo docker-compose up -d dev
 ```
 
 Open the `dev` service in a new terminal window:
 
 ```shell
-docker-compose exec npm /bin/bash
+sudo docker-compose exec dev /bin/bash
 ```
 
 ## VS Code Local Development
@@ -22,7 +34,3 @@ Open project in VS Code and then reopen in remote container when the `dev` servi
 ## PhpStorm Local Development
 
 Open project in PhpStorm.
-
-## PhpMyAdmin Local Development
-
-Open [PhpMyAdmin](http://localhost:8081/).
